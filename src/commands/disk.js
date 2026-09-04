@@ -1,6 +1,6 @@
 import { statfs } from "node:fs/promises";
 
-async function getDiskStats(path = "/") {
+export async function getDiskStats(path = "/") {
     const stats = await statfs(path);
 
     const total = stats.blocks * stats.bsize;
@@ -11,13 +11,12 @@ async function getDiskStats(path = "/") {
         total,
         used,
         available,
+        usage: (used / total) * 100,
     };
 }
 
 export async function diskCommand() {
     const disk = await getDiskStats();
 
-    const usage = (disk.used / disk.total) * 100;
-
-    console.log(`Disk Usage: ${usage.toFixed(2)}%`);
+    console.log(`Disk Usage: ${disk.usage.toFixed(2)}%`);
 }

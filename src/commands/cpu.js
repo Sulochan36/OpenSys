@@ -37,7 +37,7 @@ async function getCpuStats() {
     };
 }
 
-async function getCpuUsage() {
+export async function getCpuUsage() {
     const first = await getCpuStats();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));

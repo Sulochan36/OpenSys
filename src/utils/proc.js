@@ -52,3 +52,74 @@ export async function getProcessName(pid) {
 export async function getProcessStatus(pid) {
     return await readFile(`/proc/${pid}/status`, "utf-8");
 }
+
+export async function getProcesses(sortBy = "cpu", limit = null) {
+    const processes = [];
+    const pids = await getProcessIds();
+
+    const systemStart = await getTotalCpuTime();
+
+    const processStart = new Map();
+
+    for (const pid of pids) {
+        try {
+            processStart.set(pid, await getProcessCpuTime(pid));
+        } catch {
+            // Process may have exited
+        }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const systemEnd = await getTotalCpuTime();
+    const systemDelta = systemEnd - systemStart;
+
+    for (const pid of pids) {
+        try {
+            const processEnd = await getProcessCpuTime(pid);
+            const startTime = processStart.get(pid);
+
+            if (startTime === undefined) continue;
+
+            const processDelta = processEnd - startTime;
+            const cpu = (processDelta / systemDelta) * 100;
+
+            const name = await getProcessName(pid);
+            const status = await getProcessStatus(pid);
+
+            const memoryLine = status
+                .split("\n")
+                .find((line) => line.startsWith("VmRSS:"));
+
+            const memory = memoryLine
+                ? Number(memoryLine.split(/\s+/)[1])
+                : 0;
+
+            const stateLine = status
+                .split("\n")
+                .find((line) => line.startsWith("State:"));
+
+            const state = stateLine
+                ? stateLine.split(/\s+/)[1]
+                : "?";
+
+            processes.push({
+                pid,
+                name: name.trim(),
+                state,
+                cpu,
+                memory,
+            });
+        } catch {
+            // Process may have exited
+        }
+    }
+
+    if (sortBy === "memory") {
+        processes.sort((a, b) => b.memory - a.memory);
+    } else {
+        processes.sort((a, b) => b.cpu - a.cpu);
+    }
+
+    return limit ? processes.slice(0, limit) : processes;
+}

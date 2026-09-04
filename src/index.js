@@ -11,6 +11,7 @@ import { servicesCommand } from "./commands/services.js";
 import { networkCommand } from "./commands/network.js";
 import { dockerCommand } from "./commands/docker.js";
 import { logsCommand } from "./commands/logs.js";
+import { watchCommand } from "./commands/watch.js";
 
 const command = process.argv[2];
 
@@ -37,6 +38,8 @@ try {
         await dockerCommand();
     } else if (command === "logs") {
         await logsCommand();
+    } else if (command === "watch") {
+        await watchCommand();
     } else {
         console.error(`Unknown command: ${command}`);
         console.error("Run 'opensys help' to see available commands.");
